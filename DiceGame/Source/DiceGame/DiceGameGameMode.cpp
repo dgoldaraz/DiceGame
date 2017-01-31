@@ -2,14 +2,16 @@
 
 #include "DiceGame.h"
 #include "DiceGameGameMode.h"
+#include "DiceGameHUD.h"
 #include "DiceGameCharacter.h"
 
 ADiceGameGameMode::ADiceGameGameMode()
+	: Super()
 {
 	// set default pawn class to our Blueprinted character
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/ThirdPersonCPP/Blueprints/ThirdPersonCharacter"));
-	if (PlayerPawnBPClass.Class != NULL)
-	{
-		DefaultPawnClass = PlayerPawnBPClass.Class;
-	}
+	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(TEXT("/Game/FirstPersonCPP/Blueprints/FirstPersonCharacter"));
+	DefaultPawnClass = PlayerPawnClassFinder.Class;
+
+	// use our custom HUD class
+	HUDClass = ADiceGameHUD::StaticClass();
 }
