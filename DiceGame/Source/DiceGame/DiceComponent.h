@@ -3,8 +3,12 @@
 #pragma once
 
 #include "Components/ActorComponent.h"
+#include "PositionDice.h"
 #include "DiceComponent.generated.h"
 
+/*
+	This component Stores the functionality relevant for simulating a Dice. You can throw it and know the value when it's stopped
+*/
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DICEGAME_API UDiceComponent : public UActorComponent
@@ -13,12 +17,25 @@ class DICEGAME_API UDiceComponent : public UActorComponent
 
 public:
 
+	//This function will start to roll the dice in a semi random direction
 	UFUNCTION(BlueprintCallable, Category = "Dice")
-	void RollDice();
+	void RollDice(FVector Direction);
 
 	//Reset Position to Initial
 	UFUNCTION(BlueprintCallable, Category = "Dice")
 	void ResetPosition();
+
+	//Draw the normals of the element in different colours
+	UFUNCTION(BlueprintCallable, Category = "Dice")
+	void DrawNormals();
+
+	//This function return true if the actor it's not moving by physic objects
+	UFUNCTION(BlueprintCallable, Category = "Dice")
+	bool IsStopped();
+
+	//Get Top Value
+	UFUNCTION(BlueprintCallable, Category = "Dice")
+	int GetCurrentValue();
 
 	//Set the min and max direction between the dice throw direction will be calculated
 	UPROPERTY(EditAnywhere, Category = "Dice")
@@ -27,16 +44,19 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Dice")
 	FVector MaxDirection = FVector::ZeroVector;
 
+	//Max impulse that can be applied to the Dice
 	UPROPERTY(EditAnywhere, Category = "Dice")
 	float MaxImpulse = 500.0f;
 
-
+	//Rotation Limits
 	UPROPERTY(EditAnywhere, Category = "Dice")
 	FVector MinRotation = FVector::ZeroVector;
 
 	UPROPERTY(EditAnywhere, Category = "Dice")
 	FVector MaxRotation = FVector::ZeroVector;
 
+	UPROPERTY(EditAnywhere, Category = "Dice")
+	TArray<UPositionDice*> DicePositionsArray;
 
 	// Sets default values for this component's properties
 	UDiceComponent();
@@ -50,8 +70,14 @@ public:
 
 private:
 
+	//This function will go through all the DicePositions and choose the one with the higer location, and return it's value.
+	int GetTopValue();
+
 	AActor* Owner = nullptr;
 	UStaticMeshComponent* MeshComponent = nullptr;
 	FVector InitialPosition = FVector::ZeroVector;
 	FRotator InitialRotator = FRotator::ZeroRotator;
+	bool bDrawNormals = false;
+	int CurrentTopValue = 0;
+
 };
