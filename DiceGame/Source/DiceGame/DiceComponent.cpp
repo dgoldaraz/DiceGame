@@ -9,7 +9,6 @@
 #include "Engine.h"
 
 
-
 FColor ChooseColor(int i)
 {
 	return FColor(FMath::RandRange(0, 255), FMath::RandRange(0, 255), FMath::RandRange(0, 255));
@@ -31,6 +30,30 @@ void UDiceComponent::DrawNormals()
 				DrawDebugLine(GetWorld(), Owner->GetActorLocation(), Owner->GetActorLocation() + ZVector * 100, ChooseColor(j), true);
 				CurrentVector = ZVector;
 				j++;
+			}
+		}
+	}
+}
+
+void UDiceComponent::CenterCursor()
+{
+	//Show Mouse
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	if (PlayerController)
+	{
+		PlayerController->bShowMouseCursor = true;
+		const ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer();
+		if (LocalPlayer && LocalPlayer->ViewportClient)
+		{
+			FViewport* Viewport = LocalPlayer->ViewportClient->Viewport;
+			if (Viewport)
+			{
+				FVector2D ViewportSize;
+				LocalPlayer->ViewportClient->GetViewportSize(ViewportSize);
+				const int32 X = static_cast<int32>(ViewportSize.X * 0.5f);
+				const int32 Y = static_cast<int32>(ViewportSize.Y * 0.5f);
+
+				Viewport->SetMouse(X, Y);
 			}
 		}
 	}
@@ -76,9 +99,10 @@ void UDiceComponent::BeginPlay()
 				}
 			}
 		}
-		
+		CenterCursor();
+		//Stop Movement
+		GetWorld()->GetFirstPlayerController()->SetIgnoreMoveInput(true);
 	}
-
 	InitialPosition = Owner->GetActorLocation();
 	InitialRotator = Owner->GetActorRotation();
 }
@@ -87,37 +111,36 @@ void UDiceComponent::BeginPlay()
 // Called every frame
 void UDiceComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
+	int jj = DiceDebug->GetInt();
+	if (DiceDebug->GetInt() != 0)
+	{
+		DrawNormals();
+		DrawDebugLine(GetWorld(), Owner->GetActorLocation(), Owner->GetActorLocation() + Owner->GetActorForwardVector() * 100, FColor::Green, true);
+		if (GEngine)
+		{
+			FString TextValue = TEXT("The top Face value is ");
+			TextValue.Append(FString::FromInt(CurrentTopValue));
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TextValue);
+		}
+	}
+
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (IsStopped())
 	{
-		if (!bDrawNormals)
-		{
-			DrawNormals();
-			CurrentTopValue = GetTopValue();
-			if (GEngine)
-			{
-				FString TextValue = TEXT("The top Face value is ");
-				TextValue.Append(FString::FromInt(CurrentTopValue));
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TextValue);
-			}
-
-			bDrawNormals = true;
-		}
-	}
-	else
-	{
-		bDrawNormals = false;
+		CurrentTopValue = GetTopValue();
+		Stopped = true;
 	}
 }
 
 bool UDiceComponent::IsStopped()
 {
-	if (Owner && MeshComponent)
+
+	if (Owner && MeshComponent && !Stopped)
 	{
 		FVector AngularVelocity = MeshComponent->GetPhysicsAngularVelocity();
 		return MeshComponent->GetPhysicsAngularVelocity().IsZero() && MeshComponent->GetPhysicsLinearVelocity().IsZero();
 	}
-	return false;
+	return Stopped;
 }
 
 int UDiceComponent::GetCurrentValue()
@@ -147,13 +170,19 @@ void UDiceComponent::RollDice(FVector UserDirection)
 {
 	//Calculate a new Thrown direction (using min max)
 	//Add Random rotations to the dice
-	if (Owner != nullptr)
+	//A Dice can only be thrown if it's stopped
+	if (Owner != nullptr && Stopped)
 	{
 		FVector Direction = UserDirection;
 		if (Direction.IsZero())
 		{
 			FVector NewOffset = FVector(FMath::RandRange(MinDirection.X, MaxDirection.X), FMath::RandRange(MinDirection.Y, MaxDirection.Y), FMath::RandRange(MinDirection.Z, MaxDirection.Z));
 			Direction = Owner->GetActorForwardVector() + NewOffset;
+		}
+		else
+		{
+
+			Direction.Z = FMath::RandRange(MinDirection.Z, MaxDirection.Z);
 		}
 		//Add the new offset to the forward direction
 		float Impulse = FMath::RandRange(5.0f, MaxImpulse);
@@ -162,6 +191,7 @@ void UDiceComponent::RollDice(FVector UserDirection)
 		MeshComponent->AddImpulse(Direction * Impulse);
 		FVector TorqueImpulse = FVector(FMath::RandRange(MinRotation.X, MaxRotation.X), FMath::RandRange(MinRotation.Y, MaxRotation.Y), FMath::RandRange(MinRotation.Z, MaxRotation.Z));
 		MeshComponent->AddAngularImpulse(TorqueImpulse * Impulse);
+		Stopped = false;
 	}
 }
 

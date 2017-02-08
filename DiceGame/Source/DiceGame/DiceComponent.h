@@ -10,6 +10,9 @@
 	This component Stores the functionality relevant for simulating a Dice. You can throw it and know the value when it's stopped
 */
 
+static FAutoConsoleVariable DiceDebug = FAutoConsoleVariable(TEXT("debug.debugDice"), 0,TEXT("Enables Dice Debug View"), ECVF_Cheat);
+
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DICEGAME_API UDiceComponent : public UActorComponent
 {
@@ -24,10 +27,6 @@ public:
 	//Reset Position to Initial
 	UFUNCTION(BlueprintCallable, Category = "Dice")
 	void ResetPosition();
-
-	//Draw the normals of the element in different colours
-	UFUNCTION(BlueprintCallable, Category = "Dice")
-	void DrawNormals();
 
 	//This function return true if the actor it's not moving by physic objects
 	UFUNCTION(BlueprintCallable, Category = "Dice")
@@ -73,11 +72,16 @@ private:
 	//This function will go through all the DicePositions and choose the one with the higer location, and return it's value.
 	int GetTopValue();
 
+	//Draw the normals of the element in different colours
+	void DrawNormals();
+
+	//Center the cursor
+	void CenterCursor();
+
 	AActor* Owner = nullptr;
 	UStaticMeshComponent* MeshComponent = nullptr;
 	FVector InitialPosition = FVector::ZeroVector;
 	FRotator InitialRotator = FRotator::ZeroRotator;
-	bool bDrawNormals = false;
 	int CurrentTopValue = 0;
-
+	bool Stopped = true;
 };

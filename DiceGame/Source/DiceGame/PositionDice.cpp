@@ -13,18 +13,3 @@ UPositionDice::UPositionDice()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-
-// Called when the game starts
-void UPositionDice::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-
-// Called every frame
-void UPositionDice::TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction )
-{
-	Super::TickComponent( DeltaTime, TickType, ThisTickFunction );
-
-}
-
