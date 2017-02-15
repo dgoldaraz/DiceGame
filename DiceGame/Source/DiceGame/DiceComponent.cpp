@@ -27,7 +27,7 @@ void UDiceComponent::DrawNormals()
 			FVector ZVector = MeshComponent->StaticMesh->RenderData->LODResources[0].VertexBuffer.VertexTangentZ(i).GetSafeNormal();
 			if (!ZVector.Equals(CurrentVector))
 			{
-				DrawDebugLine(GetWorld(), Owner->GetActorLocation(), Owner->GetActorLocation() + ZVector * 100, ChooseColor(j), true);
+				DrawDebugLine(GetWorld(), Owner->GetActorLocation(), Owner->GetActorLocation() + ZVector * 100, ChooseColor(j), false, 1.0f, 0, 5.0f);
 				CurrentVector = ZVector;
 				j++;
 			}
@@ -102,6 +102,7 @@ void UDiceComponent::BeginPlay()
 		CenterCursor();
 		//Stop Movement
 		GetWorld()->GetFirstPlayerController()->SetIgnoreMoveInput(true);
+		GetWorld()->GetFirstPlayerController()->SetIgnoreLookInput(true);
 	}
 	InitialPosition = Owner->GetActorLocation();
 	InitialRotator = Owner->GetActorRotation();
@@ -111,16 +112,23 @@ void UDiceComponent::BeginPlay()
 // Called every frame
 void UDiceComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	int jj = DiceDebug->GetInt();
+
 	if (DiceDebug->GetInt() != 0)
 	{
-		DrawNormals();
-		DrawDebugLine(GetWorld(), Owner->GetActorLocation(), Owner->GetActorLocation() + Owner->GetActorForwardVector() * 100, FColor::Green, true);
-		if (GEngine)
+		DrawDebugLine(GetWorld(), Owner->GetActorLocation(), Owner->GetActorLocation() + Owner->GetActorForwardVector() * 1000.0f, FColor::Green, false, 1.0f, 0, 5.0f);
+
+		if (DiceDebug->GetInt() == 2)
 		{
-			FString TextValue = TEXT("The top Face value is ");
-			TextValue.Append(FString::FromInt(CurrentTopValue));
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TextValue);
+			DrawNormals();
+		}
+		if (DiceDebug->GetInt() == 3)
+		{
+			if (GEngine)
+			{
+				FString TextValue = TEXT("The top Face value is ");
+				TextValue.Append(FString::FromInt(CurrentTopValue));
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TextValue);
+			}
 		}
 	}
 
@@ -129,16 +137,26 @@ void UDiceComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	{
 		CurrentTopValue = GetTopValue();
 		Stopped = true;
+		if (!AskForMoving)
+		{
+			MeshComponent->SetSimulatePhysics(false);
+		}
 	}
 }
 
 bool UDiceComponent::IsStopped()
 {
 
-	if (Owner && MeshComponent && !Stopped)
+	if (Owner && MeshComponent && (!Stopped || AskForMoving))
 	{
 		FVector AngularVelocity = MeshComponent->GetPhysicsAngularVelocity();
-		return MeshComponent->GetPhysicsAngularVelocity().IsZero() && MeshComponent->GetPhysicsLinearVelocity().IsZero();
+		bool IsNotMoving = MeshComponent->GetPhysicsAngularVelocity().IsZero() && MeshComponent->GetPhysicsLinearVelocity().IsZero();
+		if (!IsNotMoving && AskForMoving)
+		{
+			AskForMoving = false;
+			Stopped = false;
+		}
+		return IsNotMoving;
 	}
 	return Stopped;
 }
@@ -174,6 +192,7 @@ void UDiceComponent::RollDice(FVector UserDirection)
 	if (Owner != nullptr && Stopped)
 	{
 		FVector Direction = UserDirection;
+		float Length = Direction.Size();
 		if (Direction.IsZero())
 		{
 			FVector NewOffset = FVector(FMath::RandRange(MinDirection.X, MaxDirection.X), FMath::RandRange(MinDirection.Y, MaxDirection.Y), FMath::RandRange(MinDirection.Z, MaxDirection.Z));
@@ -181,23 +200,31 @@ void UDiceComponent::RollDice(FVector UserDirection)
 		}
 		else
 		{
-
 			Direction.Z = FMath::RandRange(MinDirection.Z, MaxDirection.Z);
 		}
 		//Add the new offset to the forward direction
-		float Impulse = FMath::RandRange(5.0f, MaxImpulse);
+		float Impulse = FMath::RandRange(MaxImpulse*0.5f, MaxImpulse);
+		Impulse *= Length;
 		//Add impulse
 		MeshComponent->SetSimulatePhysics(true);
 		MeshComponent->AddImpulse(Direction * Impulse);
+
+		if (DiceDebug->GetInt() == 1)
+		{
+			DrawDebugLine(GetWorld(), Owner->GetActorLocation(), Owner->GetActorLocation() + (Direction*Impulse), FColor::Red, true);
+		}
+
 		FVector TorqueImpulse = FVector(FMath::RandRange(MinRotation.X, MaxRotation.X), FMath::RandRange(MinRotation.Y, MaxRotation.Y), FMath::RandRange(MinRotation.Z, MaxRotation.Z));
 		MeshComponent->AddAngularImpulse(TorqueImpulse * Impulse);
-		Stopped = false;
+		AskForMoving = true;
 	}
 }
 
 void UDiceComponent::ResetPosition()
 {
 	Owner->SetActorLocation(InitialPosition);
+	MeshComponent->SetPhysicsAngularVelocity(FVector::ZeroVector);
+	MeshComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
 	MeshComponent->SetSimulatePhysics(false);
 	Owner->SetActorRotation(InitialRotator);
 }

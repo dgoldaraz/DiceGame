@@ -10,7 +10,7 @@
 	This component Stores the functionality relevant for simulating a Dice. You can throw it and know the value when it's stopped
 */
 
-static FAutoConsoleVariable DiceDebug = FAutoConsoleVariable(TEXT("debug.debugDice"), 0,TEXT("Enables Dice Debug View"), ECVF_Cheat);
+static FAutoConsoleVariable DiceDebug = FAutoConsoleVariable(TEXT("d.Dice"), 0,TEXT("Enables Dice Debug View"), ECVF_Cheat);
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -84,4 +84,5 @@ private:
 	FRotator InitialRotator = FRotator::ZeroRotator;
 	int CurrentTopValue = 0;
 	bool Stopped = true;
+	bool AskForMoving = false;
 };
