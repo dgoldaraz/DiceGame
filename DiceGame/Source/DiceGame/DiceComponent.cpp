@@ -166,6 +166,12 @@ int UDiceComponent::GetCurrentValue()
 	return CurrentTopValue;
 }
 
+const FVector UDiceComponent::GetInitialPosition()
+{
+	return InitialPosition;
+}
+
+
 int UDiceComponent::GetTopValue()
 {
 	float HigherPosition = -1000;
@@ -191,6 +197,7 @@ void UDiceComponent::RollDice(FVector UserDirection)
 	//A Dice can only be thrown if it's stopped
 	if (Owner != nullptr && Stopped)
 	{
+		InitialPosition = GetOwner()->GetActorLocation();
 		FVector Direction = UserDirection;
 		float Length = Direction.Size();
 		if (Direction.IsZero())

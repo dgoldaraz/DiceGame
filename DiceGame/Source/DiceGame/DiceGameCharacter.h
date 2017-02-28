@@ -1,7 +1,9 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 #include "GameFramework/Character.h"
+#include "DiceComponent.h"
 #include "DiceGameCharacter.generated.h"
+
 
 class UInputComponent;
 
@@ -13,6 +15,7 @@ class ADiceGameCharacter : public ACharacter
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FirstPersonCameraComponent;
+
 public:
 	ADiceGameCharacter();
 
@@ -27,8 +30,6 @@ public:
 	float BaseLookUpRate;
 
 protected:
-	
-
 	/** Handles moving forward/backward */
 	void MoveForward(float Val);
 
@@ -60,7 +61,7 @@ protected:
 	void EndTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
 	void TouchUpdate(const ETouchIndex::Type FingerIndex, const FVector Location);
 	TouchData	TouchItem;
-	
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;

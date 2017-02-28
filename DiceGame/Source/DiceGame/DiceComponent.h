@@ -36,6 +36,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Dice")
 	int GetCurrentValue();
 
+	//Get Initial Position, before roll the dices
+	UFUNCTION(BlueprintCallable, Category = "Dice")
+		const FVector GetInitialPosition();
+
 	//Set the min and max direction between the dice throw direction will be calculated
 	UPROPERTY(EditAnywhere, Category = "Dice")
 	FVector MinDirection = FVector::ZeroVector;
@@ -56,6 +60,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Dice")
 	TArray<UPositionDice*> DicePositionsArray;
+
 
 	// Sets default values for this component's properties
 	UDiceComponent();
@@ -80,8 +85,8 @@ private:
 
 	AActor* Owner = nullptr;
 	UStaticMeshComponent* MeshComponent = nullptr;
-	FVector InitialPosition = FVector::ZeroVector;
 	FRotator InitialRotator = FRotator::ZeroRotator;
+	FVector InitialPosition = FVector::ZeroVector;
 	int CurrentTopValue = 0;
 	bool Stopped = true;
 	bool AskForMoving = false;
